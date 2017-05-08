@@ -41,6 +41,30 @@ public class TransportLayer {
 		return dataFrame.toString();
 	}
 
+	public static String setNACKFrame(int src, int dest,int seq){
+		StringBuilder nackFrame = new StringBuilder();
+		try {
+			
+			nackFrame.append("N");
+			nackFrame.append(src);
+			nackFrame.append(dest);
+			if(seq <10){
+				nackFrame.append(String.format("%02d", seq));
+			}
+			else{
+				nackFrame.append(seq);	
+			}			
+			
+			
+		} catch (Exception e) {
+			// TODO: handle exception
+			System.out.println("NACK Frame " + e);
+		}
+		
+		return nackFrame.toString();
+	}
+	
+	
 	public void send() {
 		
 		List<String> stringMessageFragment = Util.splitStrings(message, 5);

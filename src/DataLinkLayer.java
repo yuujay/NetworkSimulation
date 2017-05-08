@@ -65,20 +65,25 @@ public class DataLinkLayer {
 					 
 					String message = Util.readStringFromFile(channelFile, 15);
 					String checkSum = Util.readStringFromFile(channelFile, 2);
+					Integer src = (int) message.charAt(1) - 48;
+					Integer dest = (int) message.charAt(2) - 48;
+					Integer sequenceNumber =Integer.parseInt(message.substring(3, 5));
 					
-					if(message.charAt(0) == 'D' && Util.getCheckSum(message) == Integer.parseInt(checkSum)){
+					if(message.charAt(0) == 'D' && Util.getCheckSum(message) == Integer.parseInt(checkSum)){											
 						
-						Integer src = (int) message.charAt(1) - 48;
-						Integer dest = (int) message.charAt(2) - 48;
-						Integer sequenceNumber =Integer.parseInt(message.substring(3, 5));
-						
-						if(dest == destination){
-							
+						if(dest == destination){							
 							data.put(sequenceNumber, seqMsgMap.get(sequenceNumber));							
-							allSourceContents.put(src, data);
-							
-							
-						}
+							allSourceContents.put(src, data);														
+						}					
+					}
+					if(message.charAt(0) == 'D' && Util.getCheckSum(message)+1 != Integer.parseInt(checkSum)) {
+						String nackFrame = TransportLayer.setNACKFrame(dest, src, sequenceNumber);
+						datalink_receive_from_network(nackFrame, src, dest);
+					}
+					else if (message.charAt(0) == 'N') {
+					//resend pack with the sequence number	
+						String dupDataFrame = TransportLayer.setDataFrame(src, dest, sequenceNumber, seqMsgMap.get(sequenceNumber));
+						datalink_receive_from_network(dupDataFrame,dest, src);
 						
 					}
 				}
@@ -93,12 +98,7 @@ public class DataLinkLayer {
 						recievedDataMsg.append(resultStr);
 					}
 					
-//					
-					System.out.println(recievedDataMsg.toString());
-//					//file Write as recieved X
-					
 					Util.writeFile("node"+destination+"receivedFile.txt", "From "+sourceID+" received : " + recievedDataMsg.toString());
-//				
 				}
 //				
 //				
