@@ -1,6 +1,8 @@
 import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -54,7 +56,9 @@ public class Util {
 	
 	public static void writeFile(String filename, String message) {
 		try {
-			RandomAccessFile file = new RandomAccessFile("src/"+filename, "rw");
+			Path path = Paths.get(filename);
+			System.out.println(path.toString());
+			RandomAccessFile file = new RandomAccessFile(path.toString(), "rw");
 			file.writeBytes(message);
 			file.close();
 		} catch (Exception e) {
@@ -84,10 +88,14 @@ public class Util {
 		return false;
 	}
 	
-	public static File setFilePermission(File file){
-		
+	public static File setFilePermission(String filenmae){
+		File file  = new File(filenmae);
 		try{
 			
+			if(!file.exists()){
+				
+				file.createNewFile();
+			}
 			Set<PosixFilePermission> perms = new HashSet<>();
 			perms.add(PosixFilePermission.GROUP_EXECUTE);
 			perms.add(PosixFilePermission.OWNER_WRITE);

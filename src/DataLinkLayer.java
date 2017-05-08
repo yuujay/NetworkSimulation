@@ -5,9 +5,13 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.ObjectOutputStream.PutField;
 import java.io.RandomAccessFile;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -19,12 +23,17 @@ public class DataLinkLayer {
 		try {
 			//set Output Frame
 			String channelFileName = "from" + source + "to" + next_hop + ".txt";
+//			Path currentRelativePath = Paths.get("src");
+			Path currentRelativePath = Paths.get(channelFileName);
 			
-			File fileHandle = new File("src/"+channelFileName);
-			fileHandle.createNewFile();
-			fileHandle = Util.setFilePermission(fileHandle);
+			String path = currentRelativePath.toAbsolutePath().toString() ;
+			
+			File fileHandle = new File(path);
+						
+//			fileHandle = Util.setFilePermission(channelFileName);
 			//check file exist and insert file
-			RandomAccessFile file = new RandomAccessFile("src/"+channelFileName, "rw");
+			
+			RandomAccessFile file = new RandomAccessFile(path, "rw");
 			
 			file.seek(file.length());
 			file.writeBytes(setOutputFrame(message));
@@ -40,19 +49,20 @@ public class DataLinkLayer {
 	public static void datalink_receive_from_channelFile(int destination,SortedMap<Integer,String> seqMsgMap){
 		
 		try {
-			Path currentRelativePath = Paths.get("src");
+			Path currentRelativePath = Paths.get("");
 			String path = currentRelativePath.toAbsolutePath().toString();
+//			System.out.println(path);
 			File dir = new File(path);
 			
 			
 			File[] allFiles = dir.listFiles(new FilenameFilter() {
 			    public boolean accept(File dir, String name) {
-			        return name.startsWith("from") && name.endsWith(".txt");
+			    	return name.startsWith("from") && name.endsWith(".txt");
 			    }
 			});
 			
 			for (File file:allFiles){
-//				file = Util.setFilePermission(file);
+				file = Util.setFilePermission(file.getAbsolutePath());
 				int seekIndex =0;
 				StringBuilder recievedDataMsg;
 				
@@ -76,7 +86,7 @@ public class DataLinkLayer {
 							allSourceContents.put(src, data);														
 						}					
 					}
-					if(message.charAt(0) == 'D' && Util.getCheckSum(message)+1 != Integer.parseInt(checkSum)) {
+					else if(message.charAt(0) == 'D' && Util.getCheckSum(message) != Integer.parseInt(checkSum)) {
 						String nackFrame = TransportLayer.setNACKFrame(dest, src, sequenceNumber);
 						datalink_receive_from_network(nackFrame, src, dest);
 					}
@@ -98,7 +108,14 @@ public class DataLinkLayer {
 						recievedDataMsg.append(resultStr);
 					}
 					
-					Util.writeFile("node"+destination+"receivedFile.txt", "From "+sourceID+" received : " + recievedDataMsg.toString());
+					
+					String newFilePath = "node"+destination+"receivedFile.txt";
+					String newMsg = "From "+sourceID+" received : " + recievedDataMsg.toString();
+					String path1 = currentRelativePath.toAbsolutePath() + "/" + newFilePath;
+					RandomAccessFile newFile = new RandomAccessFile(path1, "rw");
+					newFile.writeBytes(newMsg);
+					newFile.close();
+//					Util.writeFile("node"+destination+"receivedFile.txt", );
 				}
 //				
 //				
